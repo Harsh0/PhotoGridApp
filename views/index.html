@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>PhotoGrid</title>
+	<link rel="stylesheet" href="../css/main.css">
+	<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+	<script src='/socket.io/socket.io.js'></script>
+	<script src="../js/photogrid_utils.js"></script>
+	<script>
+	$(function(){
+		var host= '{{host}}'; 
+		$(document).on('click','#doUpload',function(){
+			uploadNow();
+		});
+		var socket  = io(host);
+		socket.on('status',function(data){
+			showStatus(data.msg,data.delay);
+		})
+		socket.on('doUpdate',function(){
+			renderList();
+		})
+		function uploadNow(){
+			$('.progress').fadeIn(100);
+			var uploadURL = host + '/upload';
+			var uploadFile = $('.uploadPic');
+			if(uploadFile.val()!=''){
+				var form = new FormData();
+				form.append("upload",uploadFile[0].files[0]);
+				//Perform the AJAX POST request and send the file
+				ajax({
+					method:'post',
+					url:uploadURL,
+					success:function(data){
+						$('.progress').fadeOut(100);
+						uploadFile.val('');
+					},
+					progress:function(event){
+						if(event.lengthComputable){
+							var perc = (event.loaded *100)/event.total;
+							$('.progress').css('width',(perc+'%'));
+						}
+					},
+					payload:form
+				})
+			}
+		}
+	})
+	</script>
+
+</head>
+<body>
+	<div class="container">
+		<div class="topDeck">
+			<div class="logo">
+				<h1>PhotoGRID</h1>
+			</div>
+			<div class="controls">
+				<input type="file" name="uploadPic" class="uploadPic">
+				<button id="doUpload">Upload</button>
+				<div class="progressBarDiv">
+					<div class="progress"></div>
+				</div>
+				<h5 class="status"></h5>
+			</div>
+		</div>
+		<div class="gallery">
+			<ul>
+				<!-- Repeat the following <li> structure for every image -->
+				<li>
+					<div class="overlay">
+					<div class="voteCtrl">
+						<a href="#" class="voteUp">
+							<img src="../images/voteup.png" alt="Click Here to Vote Up !">
+							<h4>100</h4>
+						</a>
+					</div>
+					</div>
+					<div class="imageHolder">
+						<img src="../images/someimage.jpg" alt="">
+					</div>
+				</li>
+				<!-- End Repeat -->
+
+
+			</ul>
+		</div>
+	</div>
+</body>
+</html>
