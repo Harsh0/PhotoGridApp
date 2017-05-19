@@ -92,6 +92,16 @@ module.exports = function(express,app,formidable,fs,os,gm,knoxClient,mongoose,io
     //newForm end
   });
   //route end
+router.get('/getimages',function(req,res,next){
+  singleImageModel.find({},null,{sort:{votes:-1}},function(err,result){
+    res.send(JSON.stringify(result));
+  })
+});
+router.get('/voteup/:id',function(req,res,next){
+  singleImageModel.findByIdAndUpdate(req.params.id,{$inc:{votes:1}},function(err,result){
+      res.send(JSON.stringify({votes:result.votes}));
+  })
+});
 
   app.use('/',router);
 }
