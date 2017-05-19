@@ -9,7 +9,7 @@
 	<script src="../js/photogrid_utils.js"></script>
 	<script>
 	$(function(){
-		var host= '{{host}}'; 
+		var host= '{{host}}';
 		$(document).on('click','#doUpload',function(){
 			uploadNow();
 		});
@@ -24,6 +24,7 @@
 			$('.progress').fadeIn(100);
 			var uploadURL = host + '/upload';
 			var uploadFile = $('.uploadPic');
+			console.log(uploadFile.val());
 			if(uploadFile.val()!=''){
 				var form = new FormData();
 				form.append("upload",uploadFile[0].files[0]);
@@ -40,6 +41,9 @@
 							var perc = (event.loaded *100)/event.total;
 							$('.progress').css('width',(perc+'%'));
 						}
+					},
+					error:function(){
+						showStatus('Some error occured!! Please try again',2000)
 					},
 					payload:form
 				})

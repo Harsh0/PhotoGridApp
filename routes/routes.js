@@ -1,5 +1,5 @@
 module.exports = function(express,app,formidable,fs,os,gm,knoxClient,mongoose,io){
-  
+
   var Socket;
   io.on('connection',function(socket){
     Socket = socket;
@@ -9,13 +9,13 @@ module.exports = function(express,app,formidable,fs,os,gm,knoxClient,mongoose,io
     votes:Number
   });
   var singleImageModel = mongoose.model('singleImage',singleImage);
-  
+
   var router = express.Router();
-  
+
   router.get('/',function(req,res,next){
     res.render('index',{host:app.get('host')});
-  }) 
-  
+  })
+
   router.post('/upload',function(req,res,next){
     //File Upload
     function generateFilename(filename){
@@ -29,12 +29,13 @@ module.exports = function(express,app,formidable,fs,os,gm,knoxClient,mongoose,io
       }
       return (fstring+date+'.'+ext);
     }
-    
+
     var tmpFile,nFile,fname;
     var newForm = formidable.IncomingForm();
     newForm.keepExtensions = true;
     newForm.parse(req,function(err,fields,files){
       tmpFile = files.upload.path;
+      console.log(tmpFile);
       fname = generateFilename(files.upload.name);
       nFile = os.tmpDir()+'/'+fname;
       res.writeHead(200,{
@@ -48,14 +49,17 @@ module.exports = function(express,app,formidable,fs,os,gm,knoxClient,mongoose,io
         gm(nFile).resize(300).write(nFile,function(){
           //upload to s3 bucket
           fs.readFile(nFile,function(err,buf){
-            
-            var req = knoxClient.putBuffer(buf,'/'+fname,{
-              'Content-type':'image/jpg'
-            },function(err,res){
+
+            var req = knoxClient.put(fname,{
+              'Content-Length':buf.length,
+              'Content-Type':'image/jpeg'
+            });
+
+            req.on('response',function(res){
             	if(res.statusCode ==200){
                 //This means file is inside s3 bucket
                 console.log('inside s3');
-                
+
                 var newImage = new singleImageModel({
                   filename:fname,
                   votes:0
@@ -71,9 +75,13 @@ module.exports = function(express,app,formidable,fs,os,gm,knoxClient,mongoose,io
               }
               else{
               	console.log(res.statusCode);
-              }	
+                Socket.emit('status',{
+                  msg:'Some error occured with s3, status code : '+res.statusCode,
+                  delay:3000
+                });
+              }
             });
-
+            req.end(buf);
           });
           //read file ends
         });
@@ -82,8 +90,8 @@ module.exports = function(express,app,formidable,fs,os,gm,knoxClient,mongoose,io
       //file rename end
     });
     //newForm end
-  }); 
+  });
   //route end
-  
+
   app.use('/',router);
 }

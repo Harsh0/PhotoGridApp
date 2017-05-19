@@ -16,7 +16,7 @@ app.engine('html',require('hogan-express'));
 app.set('view engine','html');
 
 app.use(express.static(path.join(__dirname,'public')));
-app.set('port',process.env.PORT || 3000);
+app.set('port',process.env.PORT || 80);
 app.set('host',config.host);
 
 var knoxClient = knox.createClient({
