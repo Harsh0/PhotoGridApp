@@ -1,0 +1,40 @@
+1. open port 80 in inbound rule for http incoming traffic
+2. if using socket(emit from client), open all port of tcp
+3. if server is running on diffrent port then we need to do port forwarding to run that server on port 80
+-for port forwarding, first we need to do ip forwarding
+-for ip forwarding, process are following:-
+## first open etc/sysctl.conf in vim editor using admin privilidge using command "sudo vim etc/sysctl.conf" and press ENTER
+## Uncomment the line "net.ipv4.ip_forward=1" by pressing INSERT key and edit and press ESC, which will allow the functionality of ip forwarding
+## save the file by typing ":wq" and press ENTER
+## now to activate the changes we need to type "sudo sysctl -p /etc/sysctl.conf" and press ENTER, which will output net.ipv4.ipo_forward =1(this sets up the ip forwarding)
+-now ip forwarding is done, for port forwarding, as our server is running at port 3000, process are following:-
+## type "sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 3000" and press ENTER
+## now port forwarding is active, now we will configure the linux firewall to allow port 80 by typing "sudo  iptables -A INPUT -p tcp -m tcp --sport 80 -j ACCEPT" and press ENTER
+## now we have to do same thing for the output as well by typing  "sudo  iptables -A OUTPUT -p tcp -m tcp --sport 80 -j ACCEPT" and press ENTER
+-now if we restart the server, this setting will not persist , to make it persist, process are follow:-
+## first we will install the package called iptables-persistent by typing "sudo apt-get install iptables-persistent"
+## once this is done type 'sudo bash -c "iptables-save > /etc/iptables.rules.v4"' and press ENTER, this ensure after restart of server linux firewall still forward port
+4. Now there is only one issue will remain which is that you have to start server again after restarting the server, to fix this process are follow
+-first we will install the package called upstart
+## to do this type "sudo apt-get install upstart" and press ENTER
+-now we need to write
+## once this is install  go into /etc/init folder by typing "cd /etc/init" and press ENTER
+## create file inside folder by typing "sudo vim photogrid.conf" (here my project is photogrid so i named it like that)
+## edit the file by typing text written in next few lines between multihypen lines, ensure change text accordingly
+------------------------------------------------------------------------------------------------------------------
+description "Photogrid"
+
+start on started mountall
+stop on shutdown
+
+respawn
+respawn limit 99 5
+
+env NODE_ENV=production
+
+exec node /home/ubuntu/photogrid/app.js >> /var/log/photogrid.log 2>&1
+------------------------------------------------------------------------------------------------------------------
+$$ here respawn limit 99 5 means upstart should try and restart the app for maximum of 99 times with a gap of 5 second between the restart
+## save the file by typing INSERT key and ESC key and type ":wq" and presss ENTER
+5. now for starting the app type "sudo start photogrid" and press ENTER (name the same as conf file), it will output photogrid start/running, process 1322
+-now reboot the server and check, all is running fine
